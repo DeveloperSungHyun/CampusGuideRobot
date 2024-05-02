@@ -19,7 +19,7 @@ void setup() {
 
 void loop() {
 
-  segment_4ch.print(100);
+  segment_4ch.print(16.24);//7세그먼트에 배터리 전압 출력 전송 테스트값16.24
   //delay(100);
 }
 
