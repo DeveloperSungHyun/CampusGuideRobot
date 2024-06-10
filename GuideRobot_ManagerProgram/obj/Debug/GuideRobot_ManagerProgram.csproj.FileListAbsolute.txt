@@ -1,0 +1,20 @@
+D:\Project\CampusGuideRobot_Project\관리자 프로그램\GuideRobot_ManagerProgram\bin\Debug\GuideRobot_ManagerProgram.exe.config
+D:\Project\CampusGuideRobot_Project\관리자 프로그램\GuideRobot_ManagerProgram\bin\Debug\GuideRobot_ManagerProgram.exe
+D:\Project\CampusGuideRobot_Project\관리자 프로그램\GuideRobot_ManagerProgram\bin\Debug\GuideRobot_ManagerProgram.pdb
+D:\Project\CampusGuideRobot_Project\관리자 프로그램\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.csproj.AssemblyReference.cache
+D:\Project\CampusGuideRobot_Project\관리자 프로그램\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.Form1.resources
+D:\Project\CampusGuideRobot_Project\관리자 프로그램\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.Properties.Resources.resources
+D:\Project\CampusGuideRobot_Project\관리자 프로그램\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.csproj.GenerateResource.cache
+D:\Project\CampusGuideRobot_Project\관리자 프로그램\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.csproj.CoreCompileInputs.cache
+D:\Project\CampusGuideRobot_Project\관리자 프로그램\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.exe
+D:\Project\CampusGuideRobot_Project\관리자 프로그램\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.pdb
+D:\Project\CampusGuideRobot_Project\GuideRobot_ManagerProgram\bin\Debug\GuideRobot_ManagerProgram.exe.config
+D:\Project\CampusGuideRobot_Project\GuideRobot_ManagerProgram\bin\Debug\GuideRobot_ManagerProgram.exe
+D:\Project\CampusGuideRobot_Project\GuideRobot_ManagerProgram\bin\Debug\GuideRobot_ManagerProgram.pdb
+D:\Project\CampusGuideRobot_Project\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.csproj.AssemblyReference.cache
+D:\Project\CampusGuideRobot_Project\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.Form1.resources
+D:\Project\CampusGuideRobot_Project\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.Properties.Resources.resources
+D:\Project\CampusGuideRobot_Project\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.csproj.GenerateResource.cache
+D:\Project\CampusGuideRobot_Project\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.csproj.CoreCompileInputs.cache
+D:\Project\CampusGuideRobot_Project\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.exe
+D:\Project\CampusGuideRobot_Project\GuideRobot_ManagerProgram\obj\Debug\GuideRobot_ManagerProgram.pdb
