@@ -1,124 +1,77 @@
 #include <Wire.h>
-#include <RPLidar.h>
 #include <MechaQMC5883.h>
 
 MechaQMC5883 qmc;
 
-#define M_PI 3.1415926535
+int trigPins[4] = { 39, 43, 47, 51 };
+int echoPins[4] = { 41, 45, 49, 53 };
 
+int distances[4];
+float previousAzimuth;
 
-#define RPLIDAR_MOTOR 3
-
-RPLidar lidar;
-
-const float distanceThreshold = 2000;
-const float frontAngleMin = 325;
-const float frontAngleMax = 35;
-const float leftAngleMin = 290;
-const float leftAngleMax = 325;
-const float rightAngleMin = 35;
-const float rightAngleMax = 70;
-
-String dataString = "";  // 전송할 데이터를 저장할 문자열 변수
-
-
-class LowPassFilter {
-public:
-  LowPassFilter(float alpha)
-    : alpha(alpha), filteredValue(0) {}
-
-  float filter(float newValue) {
-    filteredValue = alpha * newValue + (1 - alpha) * filteredValue;
-    return filteredValue;
-  }
-
-private:
-  float alpha;          // 필터 계수 (0과 1 사이의 값)
-  float filteredValue;  // 이전 필터 값을 저장
-};
-
-LowPassFilter filter1(0.05);  // 필터 객체 생성, alpha 값은 0.1로 설정
-LowPassFilter filter2(0.05);  // 필터 객체 생성, alpha 값은 0.1로 설정
-LowPassFilter filter3(0.05);  // 필터 객체 생성, alpha 값은 0.1로 설정
-
+String out_data;
 
 void setup() {
-  Wire.begin();  // I2C 통신을 마스터로 초기화
-  lidar.begin(Serial1);
-  Serial.begin(115200);
-  pinMode(RPLIDAR_MOTOR, OUTPUT);
-  startMotor();
-  lidar.startScan();
+  Serial.begin(9600);
+  Serial1.begin(115200);  // Serial1은 ESP32와의 통신용
+  Wire.begin();           //마스터
+
+  qmc.init();
+  qmc.setMode(Mode_Continuous, ODR_200Hz, RNG_8G, OSR_512);
+
+  for (int i = 0; i < 4; i++) {
+    pinMode(trigPins[i], OUTPUT);
+    pinMode(echoPins[i], INPUT);
+  }
 }
 
 void loop() {
-  dataString = "";  // 데이터 문자열 초기화
+  Azimuth();
+  distance();  // 거리 데이터 0 = 오른쪽, 1 = 왼쪽, 2 = 정면_왼쪽, 3 = 정면_오른쪽
 
-  if (IS_OK(lidar.waitPoint())) {
-    float distance = lidar.getCurrentPoint().distance;
-    float angle = lidar.getCurrentPoint().angle;
+  for (int i = 0; i < 4; i++) {
+    out_data += String(distances[i]) + ",";
+  }
+  out_data += String(previousAzimuth) + "\n";
+  Serial1.println("test");  // 수신한 데이터를 ESP32에 전송
+  out_data = "";
 
-    if (distance > 0 && distance < distanceThreshold) {
-      if (isInLeftRange(angle)) {
-        dataString += "L:";
-        dataString += String((int)filter1.filter(distance));
-        dataString += ",";
-        //Serial.println(dataString);
-      }
+  delay(1000);
+}
 
-      if (isInFrontRange(angle)) {
-        dataString += "F:";
-        dataString += String((int)filter2.filter(distance));
-        dataString += ",";
-        Serial.println(dataString);
-      } else {
-        dataString += "F:";
-        dataString += String((int)0);
-        dataString += ",";
-        Serial.println(dataString);
-      }
+void distance() {
 
-      if (isInRightRange(angle)) {
-        dataString += "R:";
-        dataString += String((int)filter3.filter(distance));
-        dataString += ",";
-        //Serial.println(dataString);
-      }
-    }
-  } else {
-    stopMotor();
-    rplidar_response_device_info_t info;
-    if (IS_OK(lidar.getDeviceInfo(info, 100))) {
-      lidar.startScan();
-      startMotor();
-      delay(1000);
-    }
+  long durations[4];
+
+  for (int i = 0; i < 4; i++) {
+    digitalWrite(trigPins[i], LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPins[i], HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPins[i], LOW);
+
+    durations[i] = pulseIn(echoPins[i], HIGH);
+    distances[i] = durations[i] * 0.034 / 2;
+  }
+}
+
+void Azimuth() {
+  int x, y, z;
+  qmc.read(&x, &y, &z);
+
+  // 디클리네이션 보정 (서울 기준 약 -7.5도)
+  float declinationAngle = -8.23;
+  float azimuth = atan2((float)y, (float)x) * 180.0 / PI + declinationAngle;
+
+  // 방위 값이 0-360도 범위를 벗어날 경우 보정
+  if (azimuth < 0) {
+    azimuth += 360.0;
+  } else if (azimuth >= 360.0) {
+    azimuth -= 360.0;
   }
 
-  // 데이터 문자열을 I2C 통신으로 전송
-  Wire.beginTransmission(8);       // 장치 주소 8로 전송
-  Wire.write(dataString.c_str());  // 문자열을 전송
-  Wire.endTransmission();
-
-  //delay(100); // 필요에 따라 지연 시간 조절
-}
-
-bool isInFrontRange(float angle) {
-  return (angle >= frontAngleMin || angle <= frontAngleMax);
-}
-
-bool isInLeftRange(float angle) {
-  return (angle >= leftAngleMin && angle <= leftAngleMax);
-}
-
-bool isInRightRange(float angle) {
-  return (angle >= rightAngleMin && angle <= rightAngleMax);
-}
-
-void startMotor() {
-  analogWrite(RPLIDAR_MOTOR, 255);
-}
-
-void stopMotor() {
-  analogWrite(RPLIDAR_MOTOR, 0);
+  // 노이즈 제거
+  static const float alpha = 0.3;  // 노이즈 필터링 강도 (0.0 - 1.0)
+  float filteredAzimuth = alpha * azimuth + (1 - alpha) * previousAzimuth;
+  previousAzimuth = filteredAzimuth;
 }
