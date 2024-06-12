@@ -5,12 +5,20 @@
 #include "Moter.h"
 #include "BatteryLevel.h"
 #include <MechaQMC5883.h>
+#include "ESP32Client.h"
+
+ESP32Client client("ESP32_AP", "12345678", "192.168.4.1");
 
 MechaQMC5883 qmc;
 
 GpsData gps_data;
 Moter moter;
 BatteryLevel battery_level;
+
+double Latitude;   //위도
+double Longitude;  //경도
+
+
 
 
 //GPS센서 통신핀
@@ -24,7 +32,9 @@ BatteryLevel battery_level;
 #define MOTER_L_A 12
 #define MOTER_L_B 13
 
-#define BATTERY_LEVEL_PIN 27
+#define BATTERY_LEVEL_PIN 18
+
+bool start = false;
 
 int setting_speed = 700;
 
@@ -45,13 +55,21 @@ int trigPins[4] = { 15, 6, 4, 2 };
 int echoPins[4] = { 14, 5, 3, 1 };
 
 int distances[4];
-float previousAzimuth;
+float previousAzimuth;  //현재 로봇의 각도
+float point_Azimuth;
 
 String in_data;
+
+
+void onMessageReceived(String message) {
+    Serial.println("서버로부터 받은 메시지: " + message);
+    if(message != "")start = true;
+}
 
 void setup() {
   Wire.begin();          //마스터
   Serial.begin(115200);  //시리얼 출력 준비
+  client.begin();
 
   moter.Init(MOTER_R_A, MOTER_R_B, MOTER_L_A, MOTER_L_B);
   battery_level.Init(BATTERY_LEVEL_PIN);
@@ -73,52 +91,63 @@ void setup() {
 }
 
 void loop() {
+  if (start) {
+    gps_data.UpDate();
+    // calculateBearing(gps_data.GetLatitude(), gps_data.GetLongitude(), Latitude, Longitude);
+    point_Azimuth = (float)calculateBearing(36.337920, 127.446362, 36.335674, 127.445231);
+    //Moter_move();
 
+    Azimuth();
+    distance();  // 거리 데이터 0 = 오른쪽, 1 = 왼쪽, 2 = 정면_왼쪽, 3 = 정면_오른쪽
 
-  //Moter_move();
-  gps_data.UpDate();
+    // Serial.print(distances[0]);
+    // Serial.print(" , ");
+    Serial.println(point_Azimuth);
+    Serial.print(gps_data.GetLatitude(), 5);
+    Serial.print(" , ");
+    Serial.println(gps_data.GetLongitude(), 5);
+    // Serial.print(" , ");
+    Serial.println(previousAzimuth);
 
-  Azimuth();
-  distance();  // 거리 데이터 0 = 오른쪽, 1 = 왼쪽, 2 = 정면_왼쪽, 3 = 정면_오른쪽
-
-  // Serial.print(distances[0]);
-  // Serial.print(" , ");
-  // Serial.print(distances[1]);
-  Serial.print(gps_data.GetLatitude(), 5);
-  Serial.print(" , ");
-  Serial.println(gps_data.GetLongitude(), 5);
-  // Serial.print(" , ");
-  Serial.println(previousAzimuth);
-
-  if (distances[2] < 50 || distances[3] < 50) {
-    if ((distances[2] > distances[3])) {
-      //Serial.println("L");
-      if (setting_speed - 300 < 0) Ste_Moter_1_speed = 0;
-      else Ste_Moter_1_speed = setting_speed - 300;
-      Ste_Moter_2_speed = setting_speed;
+    if (distances[2] < 50 || distances[3] < 50) {
+      if ((distances[2] > distances[3])) {
+        //Serial.println("L");
+        if (setting_speed - 300 < 0) Ste_Moter_1_speed = 0;
+        else Ste_Moter_1_speed = setting_speed - 300;
+        Ste_Moter_2_speed = setting_speed;
+        Moter_move();
+      } else if ((distances[2] < distances[3])) {
+        //Serial.println("R");
+        if (setting_speed - 300 < 0) Ste_Moter_2_speed = 0;
+        else Ste_Moter_2_speed = setting_speed - 300;
+        Ste_Moter_1_speed = setting_speed;
+        Moter_move();
+      }
+    } else if (distances[0] < 20 || distances[1] < 20) {
+      if (distances[0] < distances[1]) {
+        if (setting_speed - 100 < 0) Ste_Moter_1_speed = 0;
+        else Ste_Moter_1_speed = setting_speed - 100;
+        Ste_Moter_2_speed = setting_speed;
+      } else {
+        if (setting_speed - 100 < 0) Ste_Moter_2_speed = 0;
+        else Ste_Moter_2_speed = setting_speed - 100;
+        Ste_Moter_1_speed = setting_speed;
+      }
       Moter_move();
-    } else if ((distances[2] < distances[3])) {
-      //Serial.println("R");
-      if (setting_speed - 300 < 0) Ste_Moter_2_speed = 0;
-      else Ste_Moter_2_speed = setting_speed - 300;
-      Ste_Moter_1_speed = setting_speed;
-      Moter_move();
-    }
-  } else if (distances[0] < 20 || distances[1] < 20) {
-    if (distances[0] < distances[1]) {
-      if (setting_speed - 100 < 0) Ste_Moter_1_speed = 0;
-      else Ste_Moter_1_speed = setting_speed - 100;
-      Ste_Moter_2_speed = setting_speed;
     } else {
-      if (setting_speed - 100 < 0) Ste_Moter_2_speed = 0;
-      else Ste_Moter_2_speed = setting_speed - 100;
+
       Ste_Moter_1_speed = setting_speed;
+      Ste_Moter_2_speed = setting_speed;
+      Moter_move();
     }
-    Moter_move();
-  } else {
-    Ste_Moter_1_speed = setting_speed;
-    Ste_Moter_2_speed = setting_speed;
-    Moter_move();
+  }else{
+        static unsigned long lastSendTime = 0;
+    if (millis() - lastSendTime > 10000) { // 10초마다 메시지 전송
+        //client.sendMessage("Hello from client");
+        client.receiveMessage(onMessageReceived);
+        
+        lastSendTime = millis();
+    }
   }
 }
 
